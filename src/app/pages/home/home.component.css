@@ -1,0 +1,19 @@
+:host {
+    background-image: url("../../../../public/sky.webp");
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    background-repeat: no-repeat;
+    padding-top: 20px;
+    justify-content: center;
+    align-items: self-start;
+    gap: 30px;
+
+    mat-form-field {
+        width: 60%;
+    }
+
+    button[mat-raised-button] {
+        height: 56px;
+    }
+}
