@@ -11,6 +11,6 @@ export class ApiService {
 
   getLibrariesList() {
     // this.http.get(API_URL)
-    console.log(API_URL + '123');
+    console.log(API_URL);
   }
 }
