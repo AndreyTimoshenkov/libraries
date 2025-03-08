@@ -1,18 +1,36 @@
 :host {
-    background-image: url("../../../../public/sky.webp");
-    background-size: cover;
-    background-position: center;
     display: flex;
-    padding-top: 20px;
+    align-items: center;
     justify-content: center;
-    align-items: self-start;
-    gap: 30px;
+    flex-direction: column;
 
-    mat-form-field {
-        width: 60%;
+    .header {
+        background-image: url("../../../../public/sky.webp");
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        padding-top: 20px;
+        justify-content: center;
+        align-items: self-start;
+        gap: 30px;
+        width: 100%;
+
+        mat-form-field {
+            width: 60%;
+        }
+
+        button[mat-raised-button] {
+            height: 56px;
+        }
     }
 
-    button[mat-raised-button] {
-        height: 56px;
+    mat-spinner {
+        align-self: center;
+        top: 50%;
+        position: absolute;
+    }
+
+    mat-paginator {
+        width: 100%;
     }
 }
