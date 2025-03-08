@@ -1,4 +1,4 @@
-import { Component, inject, signal, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, effect, inject, signal, ViewChild } from '@angular/core';
 import { HomeService } from "./home.service";
 import { MatFormField, MatFormFieldModule } from "@angular/material/form-field";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
@@ -18,7 +18,7 @@ import { ILibrary } from "../../model/libraries.helpers";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { finalize } from "rxjs";
 import { MatPaginator, PageEvent } from "@angular/material/paginator";
-import { toSignal } from "@angular/core/rxjs-interop";
+import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop";
 
 @Component({
   selector: 'app-home',
@@ -47,12 +47,14 @@ import { toSignal } from "@angular/core/rxjs-interop";
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
-export class HomeComponent {
+export class HomeComponent implements AfterViewInit {
   home = inject(HomeService);
+  destroyRef = inject(DestroyRef);
   value = '';
   dataSource: MatTableDataSource<ILibrary> = new MatTableDataSource<ILibrary>();
 
   resultsLength$$ = toSignal(this.home.getEntriesCount());
+  filteredResultLength$$ = signal<number>(0);
   isLoading$$ = signal(false);
 
   columns = [
@@ -69,25 +71,28 @@ export class HomeComponent {
   ];
 
   displayedColumns = this.columns.map(c => c.columnDef);
-  @ViewChild(MatPaginator, { static: true }) paginator: MatPaginator | undefined;
+  @ViewChild(MatPaginator, { static: true }) paginator!: MatPaginator;
 
   loadData(skip = 0) {
     this.isLoading$$.set(true);
-    const filterValue = this.value.toLowerCase().trim();
-    this.home.getLibrariesList(skip).pipe(
+    const filterValue = this.value.trim();
+    this.home.getLibrariesList(skip, filterValue).pipe(
       finalize(() => this.isLoading$$.set(false)),
+      takeUntilDestroyed(this.destroyRef)
     ).subscribe(
       (data: ILibrary[]) => {
-        // this.resultsLength$$.set(data.length);
         this.dataSource = new MatTableDataSource<ILibrary>(data);
-        this.dataSource.filter = filterValue;
       }
-    )
+    );
   }
 
   onPageChange(event: PageEvent) {
     const { pageIndex, pageSize } = event;
     const skip = pageIndex * pageSize;
     this.loadData(skip);
+  }
+
+  ngAfterViewInit(): void {
+    this.dataSource.paginator = this.paginator;
   }
 }

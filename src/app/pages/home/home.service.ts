@@ -9,13 +9,13 @@ import { Observable } from "rxjs";
 export class HomeService {
   api = inject(ApiService);
 
-  getLibrariesList(skip: number): Observable<ILibrary[]> {
-    const res = this.api.getLibrariesList(skip);
+  getLibrariesList(skip: number, value: string): Observable<ILibrary[]> {
+    const res = this.api.getLibrariesList(skip, value);
     return extractData(res, ['FullName', 'ObjectAddress'],
       {
-      key: 'ObjectAddress',
-      subKey: 'Address'
-    }
+        key: 'ObjectAddress',
+        subKey: 'Address'
+      }
     );
   }
 
