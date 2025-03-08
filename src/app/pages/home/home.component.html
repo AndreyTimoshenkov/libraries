@@ -28,14 +28,15 @@
     }
 
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="onRowClick(row)"></tr>
   </table>
 }
 
-<mat-paginator
-  [length]="filteredResultLength$$() || resultsLength$$()"
-  pageSize="30"
-  [showFirstLastButtons]="true"
-  (page)="onPageChange($event)"
-  aria-label="Выберите страницу результата"
-></mat-paginator>
+  <mat-paginator
+    [length]="resultsLength$$()"
+    pageSize="30"
+    [showFirstLastButtons]="true"
+    (page)="onPageChange($event)"
+    aria-label="Выберите страницу результата"
+  ></mat-paginator>
+

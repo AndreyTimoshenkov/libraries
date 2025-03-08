@@ -24,6 +24,14 @@
         }
     }
 
+    tr[mat-row] {
+        cursor: pointer;
+
+        &:hover {
+            background-color: #eeeaea;
+        }
+    }
+
     mat-spinner {
         align-self: center;
         top: 50%;

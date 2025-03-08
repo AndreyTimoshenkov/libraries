@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, DestroyRef, effect, inject, signal, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, inject, signal, ViewChild } from '@angular/core';
 import { HomeService } from "./home.service";
 import { MatFormField, MatFormFieldModule } from "@angular/material/form-field";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
@@ -16,9 +16,12 @@ import {
 } from "@angular/material/table";
 import { ILibrary } from "../../model/libraries.helpers";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
-import { finalize } from "rxjs";
-import { MatPaginator, PageEvent } from "@angular/material/paginator";
+import { finalize, tap } from "rxjs";
+import { MatPaginator, MatPaginatorIntl, PageEvent } from "@angular/material/paginator";
 import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop";
+import { MyCustomPaginatorIntl } from "../../services/paginator.service";
+import { MatDialog } from "@angular/material/dialog";
+import { LibraryCardComponent } from "../../components/library-card/library-card.component";
 
 @Component({
   selector: 'app-home',
@@ -45,16 +48,20 @@ import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop";
     MatPaginator
   ],
   templateUrl: './home.component.html',
-  styleUrl: './home.component.css'
+  styleUrl: './home.component.css',
+  providers: [
+    { provide: MatPaginatorIntl, useClass: MyCustomPaginatorIntl }
+  ],
+
 })
 export class HomeComponent implements AfterViewInit {
   home = inject(HomeService);
   destroyRef = inject(DestroyRef);
+  dialog = inject(MatDialog);
   value = '';
   dataSource: MatTableDataSource<ILibrary> = new MatTableDataSource<ILibrary>();
 
   resultsLength$$ = toSignal(this.home.getEntriesCount());
-  filteredResultLength$$ = signal<number>(0);
   isLoading$$ = signal(false);
 
   columns = [
@@ -73,12 +80,17 @@ export class HomeComponent implements AfterViewInit {
   displayedColumns = this.columns.map(c => c.columnDef);
   @ViewChild(MatPaginator, { static: true }) paginator!: MatPaginator;
 
+  ngAfterViewInit(): void {
+    this.dataSource.paginator = this.paginator;
+  }
+
   loadData(skip = 0) {
     this.isLoading$$.set(true);
     const filterValue = this.value.trim();
     this.home.getLibrariesList(skip, filterValue).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap(() => this.paginator.pageIndex = 0),
       finalize(() => this.isLoading$$.set(false)),
-      takeUntilDestroyed(this.destroyRef)
     ).subscribe(
       (data: ILibrary[]) => {
         this.dataSource = new MatTableDataSource<ILibrary>(data);
@@ -92,7 +104,10 @@ export class HomeComponent implements AfterViewInit {
     this.loadData(skip);
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator;
+  onRowClick(row: ILibrary) {
+    const dialogRef = this.dialog.open(LibraryCardComponent, {
+      width: '400px', // Adjust as needed
+      data: row,
+    });
   }
 }
