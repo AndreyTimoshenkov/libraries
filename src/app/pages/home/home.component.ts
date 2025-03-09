@@ -22,6 +22,7 @@ import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop";
 import { MyCustomPaginatorIntl } from "../../services/paginator.service";
 import { MatDialog } from "@angular/material/dialog";
 import { LibraryCardComponent } from "../../components/library-card/library-card.component";
+import { MarkPipe } from "../../pipes/mark.pipe";
 
 @Component({
   selector: 'app-home',
@@ -45,7 +46,8 @@ import { LibraryCardComponent } from "../../components/library-card/library-card
     MatRow,
     MatRowDef,
     MatProgressSpinner,
-    MatPaginator
+    MatPaginator,
+    MarkPipe
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
@@ -60,11 +62,35 @@ export class HomeComponent implements AfterViewInit {
   dialog = inject(MatDialog);
   value = '';
   dataSource: MatTableDataSource<ILibrary> = new MatTableDataSource<ILibrary>();
+  isFiltered$$ = signal(false);
 
   resultsLength$$ = toSignal(this.home.getEntriesCount());
   isLoading$$ = signal(false);
 
-  columns = [
+  // columns = [
+  //   {
+  //     columnDef: 'index',
+  //     header: 'Номер',
+  //     cell: (_: ILibrary, index: number) => `${index + 1}`,
+  //   },
+  //   {
+  //     columnDef: 'name',
+  //     header: 'Название',
+  //     cell: (library: ILibrary) => `${library.FullName}`,
+  //   },
+  //   {
+  //     columnDef: 'address',
+  //     header: 'Адрес',
+  //     cell: (library: ILibrary) => `${library.ObjectAddress}`,
+  //   },
+  // ];
+
+  columns: { columnDef: string; header: string; cell: (library: ILibrary, index: number) => string }[] = [
+    {
+      columnDef: 'index',
+      header: '#',
+      cell: (_: ILibrary, index: number) => `${index + 1}`
+    },
     {
       columnDef: 'name',
       header: 'Название',
@@ -86,6 +112,7 @@ export class HomeComponent implements AfterViewInit {
 
   loadData(skip = 0) {
     this.isLoading$$.set(true);
+    this.isFiltered$$.set(!!this.value);
     const filterValue = this.value.trim();
     this.home.getLibrariesList(skip, filterValue).pipe(
       takeUntilDestroyed(this.destroyRef),
