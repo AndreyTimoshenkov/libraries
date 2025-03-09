@@ -16,9 +16,9 @@ import {
 } from "@angular/material/table";
 import { ILibrary } from "../../model/libraries.helpers";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
-import { finalize, tap } from "rxjs";
+import { distinctUntilChanged, finalize, tap } from "rxjs";
 import { MatPaginator, MatPaginatorIntl, PageEvent } from "@angular/material/paginator";
-import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { MyCustomPaginatorIntl } from "../../services/paginator.service";
 import { MatDialog } from "@angular/material/dialog";
 import { LibraryCardComponent } from "../../components/library-card/library-card.component";
@@ -47,7 +47,7 @@ import { MarkPipe } from "../../pipes/mark.pipe";
     MatRowDef,
     MatProgressSpinner,
     MatPaginator,
-    MarkPipe
+    MarkPipe,
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
@@ -60,36 +60,19 @@ export class HomeComponent implements AfterViewInit {
   home = inject(HomeService);
   destroyRef = inject(DestroyRef);
   dialog = inject(MatDialog);
+
   value = '';
   dataSource: MatTableDataSource<ILibrary> = new MatTableDataSource<ILibrary>();
+
   isFiltered$$ = signal(false);
-
-  resultsLength$$ = toSignal(this.home.getEntriesCount());
   isLoading$$ = signal(false);
-
-  // columns = [
-  //   {
-  //     columnDef: 'index',
-  //     header: 'Номер',
-  //     cell: (_: ILibrary, index: number) => `${index + 1}`,
-  //   },
-  //   {
-  //     columnDef: 'name',
-  //     header: 'Название',
-  //     cell: (library: ILibrary) => `${library.FullName}`,
-  //   },
-  //   {
-  //     columnDef: 'address',
-  //     header: 'Адрес',
-  //     cell: (library: ILibrary) => `${library.ObjectAddress}`,
-  //   },
-  // ];
+  resultsLength$$ = signal(0);
 
   columns: { columnDef: string; header: string; cell: (library: ILibrary, index: number) => string }[] = [
     {
-      columnDef: 'index',
+      columnDef: 'number',
       header: '#',
-      cell: (_: ILibrary, index: number) => `${index + 1}`
+      cell: (library: ILibrary) => `${library.Number}`,
     },
     {
       columnDef: 'name',
@@ -114,6 +97,7 @@ export class HomeComponent implements AfterViewInit {
     this.isLoading$$.set(true);
     this.isFiltered$$.set(!!this.value);
     const filterValue = this.value.trim();
+
     this.home.getLibrariesList(skip, filterValue).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.paginator.pageIndex = 0),
@@ -123,6 +107,11 @@ export class HomeComponent implements AfterViewInit {
         this.dataSource = new MatTableDataSource<ILibrary>(data);
       }
     );
+
+    this.home.getEntriesCount(filterValue).pipe(
+      distinctUntilChanged(),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(data => this.resultsLength$$.set(data));
   }
 
   onPageChange(event: PageEvent) {
@@ -132,8 +121,8 @@ export class HomeComponent implements AfterViewInit {
   }
 
   onRowClick(row: ILibrary) {
-    const dialogRef = this.dialog.open(LibraryCardComponent, {
-      width: '400px', // Adjust as needed
+    this.dialog.open(LibraryCardComponent, {
+      width: '400px',
       data: row,
     });
   }

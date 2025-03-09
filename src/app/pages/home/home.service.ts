@@ -11,7 +11,7 @@ export class HomeService {
 
   getLibrariesList(skip: number, value: string): Observable<ILibrary[]> {
     const res = this.api.getLibrariesList(skip, value);
-    return extractData(res, ['FullName', 'ObjectAddress'],
+    return extractData(res, ['FullName', 'ObjectAddress', 'Number'],
       {
         key: 'ObjectAddress',
         subKey: 'Address'
@@ -19,7 +19,7 @@ export class HomeService {
     );
   }
 
-  getEntriesCount(): Observable<number> {
-    return this.api.getEntriesCount();
+  getEntriesCount(value: string): Observable<number> {
+    return this.api.getEntriesCount(value);
   }
 }

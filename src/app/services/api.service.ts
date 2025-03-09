@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpParams } from "@angular/common/http";
 import { ApiResponseItem } from "../model/libraries.helpers";
 import { Observable } from "rxjs";
 
@@ -13,20 +13,34 @@ export class ApiService {
   private http = inject(HttpClient);
 
   getLibrariesList(skip: number, value: string = ''): Observable<ApiResponseItem[]> {
-    let url = `${API_URL}/rows?api_key=${API_KEY}&$skip=${skip}&$top=30&$inlinecount=allpages`;
+    let params = new HttpParams()
+      .set('api_key', API_KEY)
+      .set('$skip', skip.toString())
+      .set('$top', '30')
+      .set('$inlinecount', 'allpages');
 
     if (value) {
-      const encodedValue = '%27' + encodeURIComponent(value) + '%27';
-      url += `&$filter=FullName%20eq%20${encodedValue}`;
+      params = params.set('$filter', `FullName eq '${value}'`);
     }
+
+    const url = `${API_URL}/rows?` + params.toString();
 
     return this.http.post<ApiResponseItem[]>(url, [
       "FullName",
-      "ObjectAddress"
+      "ObjectAddress",
+      "Number",
     ]);
   }
 
-  getEntriesCount(): Observable<number> {
-    return this.http.get<number>(API_URL + `/count?api_key=${API_KEY}`);
+  getEntriesCount(value: string): Observable<number> {
+    let params = new HttpParams().set('api_key', API_KEY);
+
+    if (value) {
+      params = params.set('$filter', `FullName eq '${ value }'`);
+    }
+
+    const url = `${ API_URL }/count?` + params.toString();
+
+    return this.http.get<number>(url);
   }
 }
