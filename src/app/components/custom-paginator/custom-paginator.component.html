@@ -1,0 +1,6 @@
+<button mat-fab aria-label="Previous page" (click)="onPreviousClick()" [disabled]="isFirstPage()">
+  <mat-icon>chevron_left</mat-icon>
+</button>
+<button mat-fab aria-label="Next page" (click)="onNextClick()" [disabled]="isLastPage()">
+  <mat-icon>chevron_right</mat-icon>
+</button>
