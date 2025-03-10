@@ -1,7 +1,7 @@
 <div class="header">
   <mat-form-field class="example-form-field">
     <mat-label>Поиск библиотек</mat-label>
-    <input matInput type="text" [(ngModel)]="value" (keydown.enter)="loadData()">
+    <input matInput type="text" [(ngModel)]="value" (keydown.enter)="filterData()">
     @if (value) {
       <button matSuffix type="button" mat-icon-button aria-label="Clear" (click)="value=''">
         <mat-icon>close</mat-icon>
@@ -9,7 +9,7 @@
     }
   </mat-form-field>
 
-  <button mat-raised-button (click)="loadData()">Получить данные</button>
+  <button mat-raised-button (click)="filterData()">Получить данные</button>
 </div>
 
 @if (isLoading$$()) {
@@ -32,10 +32,9 @@
   </table>
 }
 
-<mat-paginator
-  pageSize="30"
-  [length]="resultsLength$$()"
-  [showFirstLastButtons]="true"
-  (page)="onPageChange($event)"
-  aria-label="Выберите страницу результата"
-></mat-paginator>
+<app-custom-paginator
+  (previous)="onPreviousClick()"
+  (next)="onNextClick()"
+  [isFirstPage]="isFirstPage$$()"
+  [isLastPage]="isLastPage$$()"
+></app-custom-paginator>

@@ -38,7 +38,7 @@
         position: absolute;
     }
 
-    mat-paginator {
-        width: 100%;
+    app-custom-paginator {
+        margin: 10px 0;
     }
 }

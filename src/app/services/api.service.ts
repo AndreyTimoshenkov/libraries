@@ -31,16 +31,4 @@ export class ApiService {
       "Number",
     ]);
   }
-
-  getEntriesCount(value: string): Observable<number> {
-    let params = new HttpParams().set('api_key', API_KEY);
-
-    if (value) {
-      params = params.set('$filter', `FullName eq '${ value }'`);
-    }
-
-    const url = `${ API_URL }/count?` + params.toString();
-
-    return this.http.get<number>(url);
-  }
 }

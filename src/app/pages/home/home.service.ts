@@ -18,8 +18,4 @@ export class HomeService {
       }
     );
   }
-
-  getEntriesCount(value: string): Observable<number> {
-    return this.api.getEntriesCount(value);
-  }
 }

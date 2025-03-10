@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, DestroyRef, inject, signal, ViewChild } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
 import { HomeService } from "./home.service";
 import { MatFormField, MatFormFieldModule } from "@angular/material/form-field";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
@@ -16,13 +16,12 @@ import {
 } from "@angular/material/table";
 import { ILibrary } from "../../model/libraries.helpers";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
-import { distinctUntilChanged, finalize, tap } from "rxjs";
-import { MatPaginator, MatPaginatorIntl, PageEvent } from "@angular/material/paginator";
+import { finalize } from "rxjs";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { MyCustomPaginatorIntl } from "../../services/paginator.service";
 import { MatDialog } from "@angular/material/dialog";
 import { LibraryCardComponent } from "../../components/library-card/library-card.component";
 import { MarkPipe } from "../../pipes/mark.pipe";
+import { CustomPaginatorComponent } from "../../components/custom-paginator/custom-paginator.component";
 
 @Component({
   selector: 'app-home',
@@ -46,17 +45,14 @@ import { MarkPipe } from "../../pipes/mark.pipe";
     MatRow,
     MatRowDef,
     MatProgressSpinner,
-    MatPaginator,
     MarkPipe,
+    CustomPaginatorComponent,
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
-  providers: [
-    { provide: MatPaginatorIntl, useClass: MyCustomPaginatorIntl }
-  ],
 
 })
-export class HomeComponent implements AfterViewInit {
+export class HomeComponent {
   home = inject(HomeService);
   destroyRef = inject(DestroyRef);
   dialog = inject(MatDialog);
@@ -66,13 +62,28 @@ export class HomeComponent implements AfterViewInit {
 
   isFiltered$$ = signal(false);
   isLoading$$ = signal(false);
-  resultsLength$$ = signal(0);
+  isDataLoadTriggered$$ = signal(false);
+
+  pageIndex$$ = signal(0);
+  pageSize$$ = signal(30);
+
+  skip$$ = computed(() => this.pageIndex$$() * this.pageSize$$());
+  isFirstPage$$ = computed(() => this.pageIndex$$() === 0);
+  isLastPage$$ = signal(true);
+
+  constructor() {
+    effect(() => {
+      if (!this.isDataLoadTriggered$$()) return;
+
+      this.loadData(this.skip$$());
+    });
+  }
 
   columns: { columnDef: string; header: string; cell: (library: ILibrary, index: number) => string }[] = [
     {
       columnDef: 'number',
       header: '#',
-      cell: (library: ILibrary) => `${library.Number}`,
+      cell: (library: ILibrary) => `${library.Number + this.skip$$()}`,
     },
     {
       columnDef: 'name',
@@ -87,10 +98,11 @@ export class HomeComponent implements AfterViewInit {
   ];
 
   displayedColumns = this.columns.map(c => c.columnDef);
-  @ViewChild(MatPaginator, { static: true }) paginator!: MatPaginator;
 
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator;
+  filterData() {
+    this.pageIndex$$.set(0);
+    this.isDataLoadTriggered$$.set(true);
+    this.loadData();
   }
 
   loadData(skip = 0) {
@@ -100,24 +112,13 @@ export class HomeComponent implements AfterViewInit {
 
     this.home.getLibrariesList(skip, filterValue).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap(() => this.paginator.pageIndex = 0),
       finalize(() => this.isLoading$$.set(false)),
     ).subscribe(
       (data: ILibrary[]) => {
         this.dataSource = new MatTableDataSource<ILibrary>(data);
+        this.isLastPage$$.set(data.length !== this.pageSize$$());
       }
     );
-
-    this.home.getEntriesCount(filterValue).pipe(
-      distinctUntilChanged(),
-      takeUntilDestroyed(this.destroyRef),
-    ).subscribe(data => this.resultsLength$$.set(data));
-  }
-
-  onPageChange(event: PageEvent) {
-    const { pageIndex, pageSize } = event;
-    const skip = pageIndex * pageSize;
-    this.loadData(skip);
   }
 
   onRowClick(row: ILibrary) {
@@ -125,5 +126,12 @@ export class HomeComponent implements AfterViewInit {
       width: '400px',
       data: row,
     });
+  }
+
+  onPreviousClick(): void {
+    this.pageIndex$$.update(prev => prev - 1);
+  }
+  onNextClick(): void {
+    this.pageIndex$$.update(prev => prev + 1);
   }
 }
